@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel do Estudante | ENI Driving School</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBiNqgyWJMXnoraKWoKx-W_5Trdf-dcymA",
+      authDomain: "escola-de-conducao-eni.firebaseapp.com",
+      projectId: "escola-de-conducao-eni",
+      storageBucket: "escola-de-conducao-eni.firebasestorage.app",
+      messagingSenderId: "847620974578",
+      appId: "1:847620974578:web:222c873950889a9b22ed6b",
+      measurementId: "G-L0DEGB8VM1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        loadVideos();
+        const docRef = doc(db, "students", user.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const studentInfo = document.getElementById('student-info');
+          studentInfo.innerHTML = `<p style="text-align:center; font-size: 1.2rem; font-weight: 600;">Número do Estudante: ${docSnap.data().studentNumber}</p>`;
+        }
+      }
+    });
+
+    async function loadVideos() {
+      const videoList = document.getElementById('video-list');
+      const videosSnapshot = await getDocs(collection(db, "videos"));
+
+      videosSnapshot.forEach((doc) => {
+        const video = doc.data();
+        const videoCard = document.createElement('div');
+        videoCard.className = 'video-card';
+        videoCard.innerHTML = `
+          <h3>${video.title}</h3>
+          <iframe width="100%" height="315" src="${video.url}" frameborder="0" allowfullscreen></iframe>
+        `;
+        videoList.appendChild(videoCard);
+      });
+    }
+
+    window.logout = async function () {
+      await signOut(auth);
+      window.location.href = 'login.html';
+    }
+  </script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #f9f9f9;
+      padding: 2rem;
+      color: #333;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    header h1 {
+      color: #007BFF;
+      margin-bottom: 0.5rem;
+    }
+
+    #student-info {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .logout-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 0.7rem 1.5rem;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 1rem;
+    }
+
+    .logout-btn:hover {
+      background: #c82333;
+    }
+
+    #video-list {
+      display: grid;
+      gap: 2rem;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+
+    #videoList {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem auto;
+      max-width: 1200px;
+      padding: 0 1rem;
+    }
+
+    #videoList video,
+    #videoList a {
+      background: #fff;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      display: block;
+      text-decoration: none;
+      color: #007BFF;
+      font-weight: 600;
+    }
+
+    #videoList a:hover {
+      text-decoration: underline;
+    }
+
+    .video-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .video-card h3 {
+      margin-bottom: 1rem;
+      color: #007BFF;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Painel de Aulas</h1>
+    <p>Bem-vindo às suas aulas online! </p>
+    <button onclick="logout()" class="logout-btn">Sair</button>
+  </header>
+  <div id="student-info"></div>
+
+  <main id="video-list">
+    <!-- Videos will appear here -->
+  </main>
+
+  <section>
+    <h2 style="text-align:center; margin-top: 3rem;">Vídeos Disponíveis</h2>
+    <div id="videoContainer" style="margin-top:1rem;"></div>
+
+    <h2 style="text-align:center; margin-top: 3rem;">Documentos PDF</h2>
+    <div id="pdfContainer" style="margin-top:1rem;"></div>
+  </section>
+
+  <script>
+    fetch('http://localhost:5050/videos')
+      .then(response => response.json())
+      .then(files => {
+        const videoContainer = document.getElementById('videoContainer');
+        const pdfContainer = document.getElementById('pdfContainer');
+
+        if (files.length === 0) {
+          videoContainer.innerHTML = "<p>Nenhum vídeo disponível ainda.</p>";
+          pdfContainer.innerHTML = "<p>Nenhum documento disponível ainda.</p>";
+          return;
+        }
+
+        files.forEach(file => {
+          const ext = file.split('.').pop().toLowerCase();
+          if (ext === 'mp4') {
+            const title = document.createElement('p');
+            title.textContent = `🎥 ${file}`;
+            title.style.fontWeight = '600';
+            title.style.marginBottom = '0.5rem';
+
+            const video = document.createElement('video');
+            video.src = `http://localhost:5050/videos/${file}`;
+            video.controls = true;
+            video.style.width = '100%';
+            video.style.marginBottom = '2rem';
+            video.style.background = '#fff';
+            video.style.padding = '1rem';
+            video.style.borderRadius = '8px';
+            video.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+
+            videoContainer.appendChild(title);
+            videoContainer.appendChild(video);
+          } else if (ext === 'pdf') {
+            const link = document.createElement('a');
+            link.href = `http://localhost:5050/videos/${file}`;
+            link.textContent = `📄 Ver PDF: ${file}`;
+            link.target = '_blank';
+            link.style.display = 'block';
+            link.style.marginBottom = '1rem';
+            link.style.background = '#fff';
+            link.style.padding = '1rem';
+            link.style.borderRadius = '8px';
+            link.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+            link.style.color = '#007BFF';
+            link.style.fontWeight = '600';
+            link.style.textDecoration = 'none';
+            pdfContainer.appendChild(link);
+          }
+        });
+      })
+      .catch(err => {
+        console.error("Erro ao carregar os vídeos:", err);
+      });
+  </script>
+
+</body>
+
+</html>

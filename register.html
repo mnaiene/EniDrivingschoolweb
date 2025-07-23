@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Registre-se | Escola de Condução ENI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    .logo-img {
+      height: 50px;
+      margin-left: 1rem;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 2rem auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #007BFF;
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 0.8rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+
+    button {
+      width: 100%;
+      padding: 1rem;
+      background: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    .message-box {
+      max-width: 500px;
+      background: #e0f7fa;
+      padding: 2rem;
+      margin: 2rem auto;
+      text-align: center;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+      display: none;
+    }
+
+    .student-number {
+      font-weight: bold;
+      color: #007BFF;
+      font-size: 1.2rem;
+      margin: 1rem 0;
+    }
+
+    .back-link {
+      display: block;
+      margin-bottom: 1rem;
+      color: #007BFF;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBiNqgyWJMXnoraKWoKx-W_5Trdf-dcymA",
+      authDomain: "escola-de-conducao-eni.firebaseapp.com",
+      projectId: "escola-de-conducao-eni",
+      storageBucket: "escola-de-conducao-eni.firebasestorage.app",
+      messagingSenderId: "847620974578",
+      appId: "1:847620974578:web:222c873950889a9b22ed6b",
+      measurementId: "G-L0DEGB8VM1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    window.registerUser = async function (event) {
+      event.preventDefault();
+
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const course = document.getElementById('course').value;
+      const profilePic = document.getElementById('profilePic').files[0];
+
+      if (!name || !email || !password || !confirmPassword || !course || !profilePic) {
+        alert('Preencha todos os campos!');
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        alert('As senhas não coincidem!');
+        return;
+      }
+
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        const today = new Date();
+        const studentNumber = 'ENI' + today.getFullYear().toString() +
+          (today.getMonth() + 1).toString().padStart(2, '0') +
+          today.getDate().toString().padStart(2, '0') +
+          Math.floor(1000 + Math.random() * 9000);
+
+        await setDoc(doc(db, "students", user.uid), {
+          name,
+          email,
+          course,
+          studentNumber,
+          profilePicName: profilePic ? profilePic.name : null,
+          birthdate: document.getElementById('birthdate').value,
+          address: document.getElementById('address').value,
+          phone: document.getElementById('phone').value,
+          fatherName: document.getElementById('fatherName').value,
+          motherName: document.getElementById('motherName').value,
+          parentPhone: document.getElementById('parentPhone').value,
+          nationality: document.getElementById('nationality').value,
+          province: document.getElementById('province').value,
+          district: document.getElementById('district').value,
+          idNumber: document.getElementById('idNumber').value,
+          isPaid: false,
+          createdAt: new Date()
+        });
+
+        // ✅ Show Student Number Beautiful Message
+        document.querySelector(".container").style.display = "none";
+        const box = document.querySelector(".message-box");
+        box.style.display = "block";
+        document.getElementById("studentNumberDisplay").innerText = studentNumber;
+
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    window.copyStudentNumber = function () {
+      const number = document.getElementById("studentNumberDisplay").innerText;
+      navigator.clipboard.writeText(number);
+      alert("Número de Estudante copiado: " + number);
+    }
+
+    window.goToPayment = function () {
+      window.location.href = "payment.html";
+    }
+  </script>
+
+</head>
+
+<body>
+
+  <header class="navbar"
+    style="display: flex; align-items: center; padding: 1rem 2rem; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.03); margin-bottom: 2rem;">
+    <div class="logo" style="font-size: 1.5rem; font-weight: 700; color: #007BFF;">ENI Driving School</div>
+    <img src="images/Picture1.jpg" alt="Logo" class="logo-img">
+  </header>
+
+  <form class="container" onsubmit="registerUser(event)">
+    <a href="index.html" class="back-link">&larr; Voltar para a página inicial</a>
+    <h2>Registrar para Aulas Teóricas</h2>
+
+    <label for="name">Nome Completo</label>
+    <input type="text" id="name" required>
+
+    <label for="birthdate">Data de Nascimento</label>
+    <input type="date" id="birthdate" required>
+
+    <label for="address">Endereço</label>
+    <input type="text" id="address" required>
+
+    <label for="phone">Número de Telefone</label>
+    <input type="tel" id="phone" required>
+
+    <label for="nationality">Nacionalidade</label>
+    <input type="text" id="nationality" required>
+
+    <label for="province">Província</label>
+    <input type="text" id="province" required>
+
+    <label for="district">Distrito</label>
+    <input type="text" id="district" required>
+
+    <label for="idNumber">Bilhete de Identidade (Número)</label>
+    <input type="text" id="idNumber" required>
+
+    <label for="email">Email</label>
+    <input type="email" id="email" required>
+
+    <label for="fatherName">Nome do Pai</label>
+    <input type="text" id="fatherName" required>
+
+    <label for="motherName">Nome da Mãe</label>
+    <input type="text" id="motherName" required>
+
+    <label for="parentPhone">Telefone do Pai/Mãe ou Responsável</label>
+    <input type="tel" id="parentPhone" required>
+
+    <label for="password">Senha</label>
+    <input type="password" id="password" required>
+
+    <label for="confirmPassword">Confirmar Senha</label>
+    <input type="password" id="confirmPassword" required>
+
+    <label for="course">Curso</label>
+    <select id="course" required>
+      <option value="">Escolha um Curso</option>
+      <option value="Teórico Online">Teórico Online</option>
+
+    </select>
+
+    <label for="profilePic">Foto de Perfil</label>
+    <input type="file" id="profilePic" accept="image/*" required>
+
+    <button type="submit">Registrar</button>
+  </form>
+
+  <div class="message-box">
+    <h2> Registro Bem-Sucedido!</h2>
+    <p>Seu Número de Estudante:</p>
+    <div class="student-number" id="studentNumberDisplay"></div>
+    <button onclick="copyStudentNumber()">Copiar Número</button><br><br>
+    <button onclick="goToPayment()">Ir para Pagamento</button>
+  </div>
+
+</body>
+
+</html>

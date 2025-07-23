@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login | Escola de Condução ENI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f4f4f4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .login-container {
+      background-color: #fff;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      color: #007BFF;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBiNqgyWJMXnoraKWoKx-W_5Trdf-dcymA",
+      authDomain: "escola-de-conducao-eni.firebaseapp.com",
+      projectId: "escola-de-conducao-eni",
+      storageBucket: "escola-de-conducao-eni.firebasestorage.app",
+      messagingSenderId: "847620974578",
+      appId: "1:847620974578:web:222c873950889a9b22ed6b",
+      measurementId: "G-L0DEGB8VM1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    window.loginAdmin = async function (event) {
+      event.preventDefault();
+      const email = document.getElementById('adminEmail').value.trim();
+      const password = document.getElementById('adminPassword').value;
+
+      try {
+        const result = await signInWithEmailAndPassword(auth, email, password);
+
+        // Check if user exists in 'admins' collection in Firestore
+        const db = getFirestore(app);
+        const adminRef = doc(db, "admins", result.user.uid);
+        const adminSnap = await getDoc(adminRef);
+
+        if (adminSnap.exists()) {
+          alert("Login realizado com sucesso!");
+          localStorage.setItem('adminToken', 'ENI9300');
+          window.location.href = 'admin-dashboard.html';
+        } else {
+          alert("Esta conta não tem permissão de administrador.");
+        }
+      } catch (error) {
+        alert("Erro ao fazer login: " + error.message);
+      }
+    };
+  </script>
+</head>
+
+<body>
+  <a href="index.html"
+    style="position: absolute; top: 20px; left: 20px; color: #007BFF; font-weight: 600; text-decoration: none;">←
+    Voltar</a>
+  <div class="login-container">
+    <h2>Login do Administrador</h2>
+    <form onsubmit="loginAdmin(event)">
+      <input type="email" id="adminEmail" placeholder="Email do administrador" required>
+      <input type="password" id="adminPassword" placeholder="Senha" required>
+      <button type="submit">Entrar</button>
+    </form>
+  </div>
+</body>
+
+</html>

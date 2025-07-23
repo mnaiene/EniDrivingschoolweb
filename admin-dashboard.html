@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Dashboard | Escola de Condução ENI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 2rem;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      color: #007BFF;
+      margin-bottom: 2rem;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .upload-section {
+      margin-bottom: 2rem;
+    }
+
+    label {
+      font-weight: 600;
+    }
+
+    input[type="file"],
+    button {
+      width: 100%;
+      padding: 1rem;
+      margin-top: 1rem;
+      margin-bottom: 2rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      background-color: #007BFF;
+      color: white;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .logout {
+      text-align: center;
+      margin-top: 3rem;
+    }
+
+    .logout a {
+      text-decoration: none;
+      color: red;
+      font-weight: 600;
+    }
+
+    .btn-view-students {
+      display: inline-block;
+      background-color: #17a2b8;
+      color: white;
+      text-align: center;
+      padding: 0.8rem 1.5rem;
+      border-radius: 5px;
+      text-decoration: none;
+      font-weight: bold;
+      margin-top: 1rem;
+      transition: background 0.3s;
+    }
+
+    .btn-view-students:hover {
+      background-color: #138496;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1>Admin Dashboard</h1>
+
+    <div class="upload-section">
+      <h2>Upload de Vídeo de Aula</h2>
+      <input type="text" name="videoTitle" id="videoTitle" placeholder="Título do vídeo" required>
+      <textarea name="videoDescription" id="videoDescription" placeholder="Descrição do vídeo"></textarea>
+      <input type="file" id="fileUpload" accept="video/*">
+      <button onclick="uploadVideo()">Upload Video</button>
+    </div>
+
+    <div class="upload-section">
+      <h2>Upload de Documento PDF (Opcional)</h2>
+      <input type="text" name="pdfTitle" id="pdfTitle" placeholder="Título do PDF" required>
+      <textarea name="pdfDescription" id="pdfDescription" placeholder="Descrição do PDF"></textarea>
+      <input type="file" id="pdfUpload" accept="application/pdf">
+      <button onclick="uploadPDF()">Upload PDF</button>
+    </div>
+
+    <div class="upload-section">
+      <h2>Ver Lista de Estudantes</h2>
+      <a href="student_list.html" class="btn-view-students">📋 Ver Estudantes</a>
+    </div>
+
+    <div class="logout">
+      <a href="index.html">← Voltar ao Site Principal</a>
+    </div>
+  </div>
+
+  <script>
+    function uploadVideo() {
+      const fileInput = document.getElementById('fileUpload');
+      const file = fileInput.files[0];
+      if (!file) {
+        alert('Por favor selecione um vídeo.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', 'video');
+
+      const title = document.getElementById('videoTitle').value;
+      const description = document.getElementById('videoDescription').value;
+      formData.append('title', title);
+      formData.append('description', description);
+
+      fetch('http://127.0.0.1:5050/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': localStorage.getItem('adminToken')
+        },
+        body: formData
+      })
+        .then(res => {
+          console.log('Fetch response (video):', res);
+          return res.json();
+        })
+        .then(data => {
+          console.log('Server response (video):', data);
+          alert('✅ Vídeo enviado com sucesso: ' + data.filename);
+        })
+        .catch(err => {
+          console.error('Erro ao enviar vídeo:', err);
+          alert('❌ Falha no upload do vídeo.');
+        });
+    }
+
+    function uploadPDF() {
+      const fileInput = document.getElementById('pdfUpload');
+      const file = fileInput.files[0];
+      if (!file) {
+        alert('Por favor selecione um documento PDF.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', 'pdf');
+
+      const title = document.getElementById('pdfTitle').value;
+      const description = document.getElementById('pdfDescription').value;
+      formData.append('title', title);
+      formData.append('description', description);
+
+      fetch('http://127.0.0.1:5050/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': localStorage.getItem('adminToken')
+        },
+        body: formData
+      })
+        .then(res => {
+          console.log('Fetch response (pdf):', res);
+          return res.json();
+        })
+        .then(data => {
+          console.log('Server response (pdf):', data);
+          alert('✅ PDF enviado com sucesso: ' + data.filename);
+        })
+        .catch(err => {
+          console.error('Erro ao enviar PDF:', err);
+          alert('❌ Falha no upload do PDF.');
+        });
+    }
+  </script>
+
+</body>
+
+</html>

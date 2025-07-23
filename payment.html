@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pagamento | Escola de Condução ENI</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #f9f9f9;
+      margin: 0;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      color: #007BFF;
+      margin-bottom: 1rem;
+    }
+
+    p {
+      max-width: 320px;
+      text-align: center;
+      margin-bottom: 1.5rem;
+      color: #333;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      width: 320px;
+      margin-top: 1rem;
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    input {
+      padding: 0.8rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+
+    input:focus {
+      border-color: #007BFF;
+      outline: none;
+    }
+
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+
+    a {
+      margin-top: 2rem;
+      display: inline-block;
+      text-decoration: none;
+      background: #007BFF;
+      color: white;
+      padding: 0.8rem 2rem;
+      border-radius: 5px;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    a:hover {
+      background: #0056b3;
+    }
+
+    button {
+      padding: 1rem;
+      font-size: 1.1rem;
+      background: linear-gradient(135deg, #25D366, #128C7E);
+      color: white;
+      border: none;
+      border-radius: 30px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(37, 211, 102, 0.6);
+      transition: transform 0.2s, box-shadow 0.3s;
+    }
+
+    button:hover {
+      transform: scale(1.07);
+      box-shadow: 0 10px 30px rgba(37, 211, 102, 0.9);
+    }
+
+    #loading {
+      display: none;
+      margin-top: 1rem;
+      color: #007BFF;
+      font-weight: 600;
+      text-align: center;
+    }
+  </style>
+
+  <!-- Firebase App (the core Firebase SDK) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <!-- Firebase Authentication -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <!-- Firebase Firestore -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+</head>
+
+<body>
+  <h1>Pagamento de Aulas Teóricas</h1>
+  <p>Por favor, insira seus dados do M-Pesa para pagar e acessar as aulas online.</p>
+
+  <form id="mpesa-form">
+    <input type="tel" id="msisdn" placeholder="Número M-Pesa (ex: 25884XXXXXXX)" required pattern="258[0-9]{8,9}" />
+    <input type="text" id="amount" value="1" readonly />
+    <button type="submit">Pagar com M-Pesa</button>
+    <div id="loading">Processando pagamento...</div>
+  </form>
+
+  <a href="index.html">← Voltar para o Início</a>
+
+  <script>
+    // Your Firebase configuration
+    const firebaseConfig = {
+      // Replace these with your Firebase project config values
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const form = document.getElementById('mpesa-form');
+    const msisdnInput = document.getElementById('msisdn');
+    const amountInput = document.getElementById('amount');
+    const loadingIndicator = document.getElementById('loading');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const msisdn = msisdnInput.value.trim();
+      const amount = amountInput.value.trim();
+
+      if (!/^258\d{8,9}$/.test(msisdn)) {
+        alert('Por favor, insira um número M-Pesa válido começando com 258.');
+        return;
+      }
+
+      loadingIndicator.style.display = 'block';
+      form.querySelector('button').disabled = true;
+
+      try {
+        // Send payment request to local M-Pesa API
+        const response = await fetch('http://localhost:4242/pay', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ msisdn, amount })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.status === 200) {
+          // Update student's payment status in Firestore
+          const user = auth.currentUser;
+          if (user) {
+            const userDocRef = db.collection('students').doc(user.uid);
+            await userDocRef.update({ isPaid: true });
+          }
+
+          alert('Pagamento solicitado com sucesso. Verifique seu celular para confirmar.');
+          window.location.href = 'student-dashboard.html';
+        } else {
+          const errorMsg = result.response && typeof result.response === 'object'
+            ? JSON.stringify(result.response, null, 2)
+            : result.response || JSON.stringify(result);
+          alert('Erro ao processar pagamento:\n' + errorMsg);
+        }
+      } catch (error) {
+        alert('Erro na comunicação com o servidor de pagamento: ' + error.message);
+      } finally {
+        loadingIndicator.style.display = 'none';
+        form.querySelector('button').disabled = false;
+      }
+    });
+  </script>
+</body>
+
+</html>
